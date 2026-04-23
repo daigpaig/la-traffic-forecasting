@@ -4,3 +4,5 @@ data/
 __pycache__/
 .DS_Store
 logs/
+!experiments/temporal_only/logs/
+!experiments/temporal_only/logs/**
