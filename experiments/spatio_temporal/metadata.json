@@ -2,21 +2,22 @@
   "experiment_name": "spatio_temporal_traffic_forecasting",
   "target_metric": "test_rmse",
   "target_to_beat": 15.000,
-  "current_best_rmse": 12.054943,
-  "current_best_iteration": 3,
-  "total_iterations": 3,
-  "last_modified": "2026-05-07T23:30:00Z",
+  "current_best_rmse": 11.939847,
+  "current_best_iteration": 4,
+  "total_iterations": 4,
+  "last_modified": "2026-05-07T23:50:00Z",
   "best_config": {
     "architecture": "Per-node LSTM + GAT (1 head) + residual skip",
     "hidden_size": 64,
     "graph_conv": "gat",
     "graph_layers": 1,
+    "lstm_layers": 1,
     "dropout": 0.0,
-    "adj_type": "physical",
+    "adj_type": "correlation",
     "k_neighbors": 5,
     "lr": 0.001,
     "epochs": 5,
     "batch_size": 64
   },
-  "notes": "Iteration 3: GAT replaces GCN. Learned attention weights give marginal improvement over fixed Gaussian-kernel GCN (+0.028 RMSE). Vectorized batch edge_index for speed. GAT is ~2.5x slower per epoch than GCN on CPU."
+  "notes": "Iteration 4: Correlation adjacency beats physical by +0.115 RMSE — key finding: graph topology matters more than conv operator. Next: deeper LSTM (2 layers)."
 }

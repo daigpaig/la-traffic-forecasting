@@ -43,6 +43,7 @@ class STGCN(nn.Module):
         out_channels: int = 12,
         graph_conv: str = "gcn",
         num_graph_layers: int = 1,
+        num_lstm_layers: int = 1,
         dropout: float = 0.0,
     ) -> None:
         super().__init__()
@@ -50,7 +51,10 @@ class STGCN(nn.Module):
         self.out_channels = out_channels
 
         # Per-node temporal encoder: input is 1 feature (speed) per timestep
-        self.node_lstm = nn.LSTM(1, hidden_size, batch_first=True)
+        self.node_lstm = nn.LSTM(
+            1, hidden_size, num_layers=num_lstm_layers, batch_first=True,
+            dropout=0.1 if num_lstm_layers > 1 else 0.0,
+        )
 
         # Graph convolution layers
         self.graph_layers = nn.ModuleList()
@@ -197,6 +201,7 @@ def main() -> None:
     parser.add_argument("--hidden", type=int, default=64)
     parser.add_argument("--graph-conv", type=str, default="gcn", choices=["gcn", "cheb", "gat"])
     parser.add_argument("--graph-layers", type=int, default=2)
+    parser.add_argument("--lstm-layers", type=int, default=1)
     parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument("--adj-type", type=str, default="physical", choices=["physical", "correlation"])
     parser.add_argument("--k-neighbors", type=int, default=10, help="K nearest neighbors")
@@ -248,6 +253,7 @@ def main() -> None:
         out_channels=out_len,
         graph_conv=args.graph_conv,
         num_graph_layers=args.graph_layers,
+        num_lstm_layers=args.lstm_layers,
         dropout=args.dropout,
     ).to(device)
 

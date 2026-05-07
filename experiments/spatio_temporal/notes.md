@@ -273,3 +273,38 @@ LR: 1e-3, Epochs: 5, Batch: 64, Seed: 0
 ### Expected Outcome
 - **Best case**: RMSE ~11.5 (data-driven graph removes spurious physical neighbors)
 - **Discard threshold**: RMSE ≥ 12.055
+
+### Results (completed)
+- **Test RMSE**: 11.940 mph ✅ (beat 12.055 by +0.115)
+- **Test MAE**: 5.772 mph | **R²**: 0.726 | **Runtime**: 953s
+- **Status**: KEPT — new best, commit 7936d9a
+- **Key finding**: Correlation adjacency > physical adjacency by a larger margin than GAT > GCN. Graph topology matters more than the conv operator. Val_mse plateau by epoch 4-5 suggests convergence near.
+
+---
+
+## Iteration 5: Deeper Per-Node LSTM (2 layers) [AGENT HYPOTHESIS]
+
+**Date**: 2026-05-07
+**Status**: 🔄 IN PROGRESS
+
+### Hypothesis
+> "A 2-layer LSTM per node has more capacity to model nonlinear temporal patterns in each sensor's 12-step window. The first layer extracts local motion features; the second captures higher-order dynamics like acceleration/deceleration trends."
+
+### Agent Reasoning
+
+Current stack: 1-layer LSTM → GAT → readout. The temporal encoder is the shallowest component. In Iter4, val_mse plateaued around epoch 4 at 0.351 — this might indicate the temporal encoder has hit a capacity ceiling, not a data ceiling.
+
+A 2-layer LSTM adds ~64K parameters (a second weight matrix of size 4×hidden²). For 12 input steps, this is modest additional cost. With dropout=0.1 between layers (standard for multi-layer LSTM), it also acts as a regularizer.
+
+Keeping correlation adjacency + GAT since they're confirmed best.
+
+### Configuration
+```
+Architecture: Per-node 2-layer LSTM (dropout=0.1) + GAT (1 head) + residual skip
+Hidden: 64, LSTM layers: 2, K: 5, adj_type: correlation
+LR: 1e-3, Epochs: 5, Batch: 64, Seed: 0
+```
+
+### Expected Outcome
+- **Best case**: RMSE ~11.5 (deeper temporal modeling captures acceleration patterns)
+- **Discard threshold**: RMSE ≥ 11.940
