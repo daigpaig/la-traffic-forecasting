@@ -238,3 +238,38 @@ LR: 1e-3, Epochs: 5, Batch: 64, Seed: 0
 - **Best case**: RMSE ~11.0 (learned attention selects better neighbors)
 - **Baseline**: RMSE < 12.083 to keep; discard otherwise
 - **Risk**: Attention adds parameters — may need more epochs to converge than fixed GCN
+
+### Results (completed)
+- **Test RMSE**: 12.055 mph ✅ (marginal improvement over 12.083)
+- **Test MAE**: 5.846 mph | **R²**: 0.720 | **Runtime**: 746s
+- **Status**: KEPT — new best, commit b3c96ad
+- **Note**: Improvement is small (+0.028). GAT is 2.5x slower than GCN per run. Attention helps slightly but graph topology may matter more.
+
+---
+
+## Iteration 4: Correlation Adjacency — Data-Driven Graph [AGENT HYPOTHESIS]
+
+**Date**: 2026-05-07
+**Status**: 🔄 IN PROGRESS
+
+### Hypothesis
+> "Physical road distance is a proxy for traffic correlation, but a noisy one. Sensors on parallel streets may be close but decoupled; sensors far apart on the same highway may be tightly coupled. Build the graph from Pearson correlation of training-split speeds instead."
+
+### Agent Reasoning
+
+Iter 3 showed GAT helps slightly over GCN (+0.028 RMSE) — learned attention weights pick better neighbors from a fixed physical graph. But the fundamental question is whether the *graph topology itself* is wrong.
+
+Correlation adjacency solves this directly: K=5 neighbors = the 5 sensors whose speed time series are most correlated with the current sensor, measured over the full training split. This is a data-driven prior that naturally captures highway topology (sensors on the same route), time-of-day coupling, and incident propagation patterns — none of which physical distance captures reliably.
+
+Keeping GAT as the convolution operator since it's the current best. If correlation adjacency + GAT beats physical + GAT, it confirms topology matters more than the conv operator.
+
+### Configuration
+```
+Architecture: Per-node LSTM + GAT (1 head) + residual skip  [same as Iter3]
+Hidden: 64, K: 5, adj_type: correlation
+LR: 1e-3, Epochs: 5, Batch: 64, Seed: 0
+```
+
+### Expected Outcome
+- **Best case**: RMSE ~11.5 (data-driven graph removes spurious physical neighbors)
+- **Discard threshold**: RMSE ≥ 12.055

@@ -2,21 +2,21 @@
   "experiment_name": "spatio_temporal_traffic_forecasting",
   "target_metric": "test_rmse",
   "target_to_beat": 15.000,
-  "current_best_rmse": 12.083,
-  "current_best_iteration": 2,
-  "total_iterations": 2,
-  "last_modified": "2026-05-07T22:00:00Z",
+  "current_best_rmse": 12.054943,
+  "current_best_iteration": 3,
+  "total_iterations": 3,
+  "last_modified": "2026-05-07T23:30:00Z",
   "best_config": {
-    "architecture": "Per-node LSTM + GCN with residual skip connections",
+    "architecture": "Per-node LSTM + GAT (1 head) + residual skip",
     "hidden_size": 64,
-    "graph_conv": "gcn",
+    "graph_conv": "gat",
     "graph_layers": 1,
     "dropout": 0.0,
     "adj_type": "physical",
     "k_neighbors": 5,
     "lr": 0.001,
-    "epochs": 10,
+    "epochs": 5,
     "batch_size": 64
   },
-  "notes": "Iteration 2: Fixed fundamental architecture flaw. Per-node LSTM (B*N, T, 1) preserves unique per-sensor temporal signatures. Residual skip around GCN prevents over-smoothing. Beat temporal baseline (15.000) by 2.917 RMSE points. R2 jumped from 0.323 to 0.719."
+  "notes": "Iteration 3: GAT replaces GCN. Learned attention weights give marginal improvement over fixed Gaussian-kernel GCN (+0.028 RMSE). Vectorized batch edge_index for speed. GAT is ~2.5x slower per epoch than GCN on CPU."
 }
