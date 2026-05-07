@@ -204,4 +204,37 @@ The goal is not to throw hyperparameters at the wall—it's to build understandi
 
 ---
 
-**Next Action**: Implement Iteration 2 architecture in `train.py` and run training.
+**Results (completed)**:
+- **Test RMSE**: 12.083 mph ✅ (beat 15.000 target by +2.917)
+- **Test MAE**: 6.236 mph | **R²**: 0.719 | **Runtime**: 1149s
+- **Status**: KEPT — new best, committed as 99bf97d
+
+---
+
+## Iteration 3: Graph Attention Network (GAT) — Learned Edge Weights [AGENT HYPOTHESIS]
+
+**Date**: 2026-05-07
+**Status**: 🔄 IN PROGRESS
+
+### Hypothesis
+> "GCN uses fixed Gaussian-kernel edge weights derived from physical distance. GAT learns attention scores α_ij from node feature similarity, dynamically de-weighting neighbors whose traffic state is irrelevant at the current timestep."
+
+### Agent Reasoning
+
+Iteration 2 gets RMSE 12.083 using physical K=5 adjacency with fixed Gaussian edge weights. The problem: two sensors 200m apart on parallel streets get high weight simply because they're close — but their traffic is structurally decoupled. GCN has no mechanism to learn this.
+
+GAT computes per-edge attention:  `α_ij = softmax_j( LeakyReLU( a^T [Wh_i || Wh_j] ) )` — this is *input-dependent*, meaning the model can learn to attend away from physically-close but traffic-irrelevant neighbors. With 1 attention head and residual skip, the risk of over-smoothing is the same as Iteration 2.
+
+Additionally, this iteration **vectorizes the batch edge_index construction** (was a Python loop over batch dimension — now a single tensor op), reducing per-epoch overhead.
+
+### Configuration
+```
+Architecture: Per-node LSTM + GAT (1 head, no edge_weight) + residual skip
+Hidden: 64, Heads: 1, K: 5, adj_type: physical
+LR: 1e-3, Epochs: 5, Batch: 64, Seed: 0
+```
+
+### Expected Outcome
+- **Best case**: RMSE ~11.0 (learned attention selects better neighbors)
+- **Baseline**: RMSE < 12.083 to keep; discard otherwise
+- **Risk**: Attention adds parameters — may need more epochs to converge than fixed GCN

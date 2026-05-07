@@ -14,7 +14,7 @@ if str(_ROOT) not in sys.path:
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from torch_geometric.nn import GCNConv, ChebConv
+from torch_geometric.nn import GATConv, GCNConv, ChebConv
 
 from shared.data_loader import (
     TrafficWindowDataset,
@@ -59,6 +59,9 @@ class STGCN(nn.Module):
                 self.graph_layers.append(GCNConv(hidden_size, hidden_size))
             elif graph_conv == "cheb":
                 self.graph_layers.append(ChebConv(hidden_size, hidden_size, K=3))
+            elif graph_conv == "gat":
+                # add_self_loops=False: adjacency already includes self-loops
+                self.graph_layers.append(GATConv(hidden_size, hidden_size, heads=1, add_self_loops=False))
             else:
                 raise ValueError(f"Unknown graph_conv: {graph_conv}")
 
@@ -92,25 +95,19 @@ class STGCN(nn.Module):
         x, _ = self.node_lstm(x)   # (B*N, T, hidden)
         x = x[:, -1, :]            # (B*N, hidden) — final hidden state per node
 
-        # Expand edge_index for batch
-        batch_edge_index = []
-        batch_edge_weight = []
-        for b in range(B):
-            offset = b * N
-            batch_edge_index.append(edge_index + offset)
-            if edge_weight is not None:
-                batch_edge_weight.append(edge_weight)
-
-        batch_edge_index = torch.cat(batch_edge_index, dim=1)
-        if edge_weight is not None:
-            batch_edge_weight = torch.cat(batch_edge_weight, dim=0)
-        else:
-            batch_edge_weight = None
+        # Vectorized batch edge_index construction (avoids slow Python loop over B)
+        E = edge_index.shape[1]
+        offsets = torch.arange(B, device=x.device).repeat_interleave(E) * N  # (B*E,)
+        batch_edge_index = edge_index.repeat(1, B) + offsets.unsqueeze(0)    # (2, B*E)
+        batch_edge_weight = edge_weight.repeat(B) if edge_weight is not None else None
 
         # Graph convolution with per-layer skip connections (prevent over-smoothing)
         for i, layer in enumerate(self.graph_layers):
             residual = x
-            x = layer(x, batch_edge_index, batch_edge_weight)
+            if isinstance(layer, GATConv):
+                x = layer(x, batch_edge_index)   # GAT computes its own attention weights
+            else:
+                x = layer(x, batch_edge_index, batch_edge_weight)
             x = self.relu(x)
             x = x + residual   # Residual skip: preserve per-node identity
             if i < len(self.graph_layers) - 1:
@@ -198,7 +195,7 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--hidden", type=int, default=64)
-    parser.add_argument("--graph-conv", type=str, default="gcn", choices=["gcn", "cheb"])
+    parser.add_argument("--graph-conv", type=str, default="gcn", choices=["gcn", "cheb", "gat"])
     parser.add_argument("--graph-layers", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument("--adj-type", type=str, default="physical", choices=["physical", "correlation"])

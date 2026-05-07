@@ -1,0 +1,2 @@
+commit	test_rmse	runtime_sec	status	description
+99bf97d	12.083416	1149.34	keep	Iter2: per-node LSTM + GCN skip, K=5 physical, epochs=10
