@@ -2,3 +2,4 @@ commit	test_rmse	runtime_sec	status	description
 99bf97d	12.083416	1149.34	keep	Iter2: per-node LSTM + GCN skip, K=5 physical, epochs=10
 b3c96ad	12.054943	746.41	keep	Iter3: GAT 1-head + per-node LSTM + skip, K=5 physical, epochs=5
 7936d9a	11.939847	953.01	keep	Iter4: GAT + correlation adjacency K=5, epochs=5
+5d44064	11.989793	1399.65	discard	Iter5: 2-layer LSTM worse+slower; val_mse noisy, MAE jumped to 6.51

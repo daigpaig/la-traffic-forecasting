@@ -308,3 +308,38 @@ LR: 1e-3, Epochs: 5, Batch: 64, Seed: 0
 ### Expected Outcome
 - **Best case**: RMSE ~11.5 (deeper temporal modeling captures acceleration patterns)
 - **Discard threshold**: RMSE ≥ 11.940
+
+### Results (completed)
+- **Test RMSE**: 11.990 mph ❌ (worse than 11.940 best)
+- **Test MAE**: 6.511 mph | **R²**: 0.723 | **Runtime**: 1400s
+- **Status**: DISCARDED
+- **Analysis**: 2-layer LSTM hurt performance. Val_mse was noisy (0.362→0.364→0.352→0.354→0.350) — the second LSTM layer adds optimization difficulty on only 12 input steps. MAE jumped +0.74 mph vs Iter4, suggesting the model is less well-calibrated. 12 timesteps may be too short a window for a 2-layer LSTM to regularize properly. **Conclusion: 1-layer LSTM is optimal for 12-step windows.**
+
+---
+
+## Iteration 6: Larger Hidden Size (hidden=96) [AGENT HYPOTHESIS]
+
+**Date**: 2026-05-07
+**Status**: 🔄 IN PROGRESS
+
+### Hypothesis
+> "Now that architecture (per-node LSTM, GAT, correlation graph) is validated, increase hidden capacity from 64→96 to allow richer per-node representations. Wider is safer than deeper for short windows."
+
+### Agent Reasoning
+
+Iter5 showed 2-layer LSTM is harmful for 12-step sequences — depth adds instability. But the val_mse plateau in Iter4 (~0.351) suggests the model may still be capacity-limited in a different sense: 64 hidden units may not have enough representational bandwidth.
+
+Wider hidden (96) keeps 1-layer LSTM (stable) while adding ~50% more parameters to the temporal encoder and graph layers. This is the "widen not deepen" principle.
+
+Note: wider hidden = larger (B*N, hidden) matrix for GATConv, so attention computation gets proportionally more expensive. Runtime expected ~1.3-1.5x Iter4 (~1250-1430s).
+
+### Configuration
+```
+Architecture: Per-node 1-layer LSTM + GAT (1 head) + residual skip  [same as Iter4]
+Hidden: 96 (up from 64), K: 5, adj_type: correlation
+LR: 1e-3, Epochs: 5, Batch: 64, Seed: 0
+```
+
+### Expected Outcome
+- **Best case**: RMSE ~11.6 (more capacity unlocks better fit)
+- **Discard threshold**: RMSE ≥ 11.940
