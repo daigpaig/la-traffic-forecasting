@@ -1,0 +1,11 @@
+test_rmse=16.721617
+test_mae=9.548150
+test_r2=0.461788
+runtime_sec=11.26
+epochs=3
+batch_size=64
+lr=0.001
+hidden=64
+layers=2
+dropout=0.2
+seed=0

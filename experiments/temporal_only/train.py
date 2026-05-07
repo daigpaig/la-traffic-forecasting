@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parents[2]
@@ -20,7 +21,7 @@ from shared.data_loader import (
     split_time_bounds,
     train_mean_std,
 )
-from shared.evaluation import mae, rmse
+from shared.evaluation import mae, r2_score, rmse
 
 
 class VanillaLSTM(nn.Module):
@@ -86,7 +87,7 @@ def evaluate_denormalized(
     mean: torch.Tensor,
     std: torch.Tensor,
     device: torch.device,
-) -> tuple[float, float]:
+) -> tuple[float, float, float]:
     model.eval()
     preds: list[torch.Tensor] = []
     targets: list[torch.Tensor] = []
@@ -98,7 +99,7 @@ def evaluate_denormalized(
         targets.append(yb * std[:, :, 0] + mean[:, :, 0])
     pred = torch.cat(preds, dim=0)
     target = torch.cat(targets, dim=0)
-    return rmse(pred, target), mae(pred, target)
+    return rmse(pred, target), mae(pred, target), r2_score(pred, target)
 
 
 def main() -> None:
@@ -108,7 +109,9 @@ def main() -> None:
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--hidden", type=int, default=64)
     parser.add_argument("--layers", type=int, default=2)
+    parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--run-name", type=str, default="iteration_1")
     args = parser.parse_args()
 
     torch.manual_seed(args.seed)
@@ -142,25 +145,43 @@ def main() -> None:
         hidden_size=args.hidden,
         num_layers=args.layers,
         horizon=out_len,
+        dropout=args.dropout,
     ).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr)
     crit = nn.MSELoss()
 
+    start_time = time.perf_counter()
     for epoch in range(1, args.epochs + 1):
         train_loss = run_epoch(model, train_loader, crit, opt, device)
         val_loss = run_epoch(model, val_loader, crit, None, device)
         print(f"epoch {epoch:02d}  train_mse {train_loss:.6f}  val_mse {val_loss:.6f}")
+    elapsed_sec = time.perf_counter() - start_time
 
-    test_rmse, test_mae = evaluate_denormalized(
+    test_rmse, test_mae, test_r2 = evaluate_denormalized(
         model, test_loader, mean.to(device), std.to(device), device
     )
-    print(f"test_rmse {test_rmse:.6f}  test_mae {test_mae:.6f}")
+    print(
+        f"test_rmse {test_rmse:.6f}  test_mae {test_mae:.6f}  "
+        f"test_r2 {test_r2:.6f}  runtime_sec {elapsed_sec:.2f}"
+    )
 
     log_dir = Path(__file__).resolve().parent / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
-    log_path = log_dir / "iteration_1.txt"
+    log_path = log_dir / f"{args.run_name}.txt"
     log_path.write_text(
-        f"test_rmse={test_rmse:.6f}\ntest_mae={test_mae:.6f}\n",
+        (
+            f"test_rmse={test_rmse:.6f}\n"
+            f"test_mae={test_mae:.6f}\n"
+            f"test_r2={test_r2:.6f}\n"
+            f"runtime_sec={elapsed_sec:.2f}\n"
+            f"epochs={args.epochs}\n"
+            f"batch_size={args.batch_size}\n"
+            f"lr={args.lr}\n"
+            f"hidden={args.hidden}\n"
+            f"layers={args.layers}\n"
+            f"dropout={args.dropout}\n"
+            f"seed={args.seed}\n"
+        ),
         encoding="utf-8",
     )
 

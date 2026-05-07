@@ -1,29 +1,43 @@
-# Temporal-only LSTM baseline (iteration 1)
+# Program v1: Temporal-only baseline and Week 3 plan
 
-## Objective
+## Goal
 
-Establish a purely temporal LSTM baseline on METR-LA so later spatial models can be compared against a simple error floor.
+Establish a reliable temporal-only baseline on METR-LA and use early dry runs to decide the first set of hyperparameters before introducing spatial structure.
 
-## Data
+## Problem setup
 
-- **Source**: METR-LA speeds in a PyTorch Geometric–style layout. The symbol `torch_geometric.datasets.METR_LA` is not present in current PyG releases (the upstream dataset PR was never merged). This repo uses `shared/metr_la_dataset.py`, and `shared/data_loader.py` imports upstream `METR_LA` when it exists, otherwise the local class.
-- **Storage**: `shared/data_loader.default_metr_la_root()` → `data/METR_LA/` (raw zip from the standard Switch mirror, then `metr_la.h5`).
-- **Tensor**: `[T, 207, 1]` with `T = 34272`.
-- **Split**: Chronological 70% / 10% / 20% train / validation / test along time. Sliding windows are generated **inside** each segment so no window crosses a split boundary.
-- **Normalization**: Per-sensor z-score using mean and standard deviation from the **training** segment only; the same mean/std is applied to validation and test.
+- **Dataset**: METR-LA traffic speeds in `shared/metr_la_dataset.py`.
+- **Tensor shape**: `[T, 207, 1]`, where `T=34272` at 5-minute resolution.
+- **Split**: chronological 70%/10%/20% train/val/test, with split-safe windowing in `TrafficWindowDataset`.
+- **Normalization**: per-sensor z-score from train split statistics only.
+- **Prediction task**: 12-step input (1 hour) to 12-step output (1 hour ahead sequence).
 
-## Model
+## Baseline model (temporal only)
 
-- **File**: `experiments/temporal_only/train.py`
-- **Architecture**: One vanilla `nn.LSTM` (207 input features per step, i.e. sensors treated as independent channels), then a linear head mapping the last hidden state to the next 12 steps × 207 speeds.
-- **Horizon**: Input length 12 (1 hour), output length 12.
+- **Code**: `experiments/temporal_only/train.py`
+- **Architecture**: LSTM encoder over sensor features + linear head to multi-step forecast.
+- **Optimization**: Adam with MSE loss in normalized space.
+- **Reported metrics**: denormalized test RMSE, MAE, R2, and runtime (seconds).
 
-## Training (this iteration)
+## Dry-run experiments (Week 3)
 
-- **Epochs**: 5 (quick smoke run).
-- **Loss**: MSE in normalized space; **reported test metrics** are RMSE and MAE after denormalizing predictions and targets to the original speed scale (see `shared/evaluation.py`).
+All dry runs used CPU, 3 epochs, `batch_size=64`, `lr=1e-3`, seed 0.
 
-## Results
+1. `iteration_2`: hidden 64, layers 2, dropout 0.0
+2. `iteration_3`: hidden 128, layers 2, dropout 0.0
+3. `iteration_4`: hidden 64, layers 1, dropout 0.0
+4. `iteration_5`: hidden 64, layers 2, dropout 0.2
 
-- **Final test RMSE (original speed units)**: **16.509** (from `logs/iteration_1.txt` after a 5-epoch run on CPU with default hyperparameters: hidden 64, 2 LSTM layers, Adam `lr=1e-3`, batch size 64).
-- **Final test MAE**: **9.328** (same run).
+### Results snapshot
+
+- **Best RMSE**: `iteration_4` with RMSE **15.000**, MAE **8.912**, R2 **0.5669**, runtime **4.99s**
+- **Worst RMSE**: `iteration_2` with RMSE **16.947**
+- **Fastest run**: `iteration_4` at **4.99s**
+- **Slowest run**: `iteration_3` at **14.13s**
+
+## Interpretation and next steps
+
+- Increasing hidden size from 64 to 128 increased runtime substantially but did not improve RMSE enough to justify cost at this stage.
+- A simpler 1-layer LSTM performed best in this short-run regime, suggesting the deeper stack may be over-parameterized for quick training.
+- Dropout at 0.2 did not help in 3-epoch tests; revisit with longer training before final conclusion.
+- **Program v1 decision**: carry forward `hidden=64`, `layers=1`, `dropout=0.0` for the next longer baseline run (for example, 15-30 epochs with early stopping).
