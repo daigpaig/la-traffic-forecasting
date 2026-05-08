@@ -343,3 +343,36 @@ LR: 1e-3, Epochs: 5, Batch: 64, Seed: 0
 ### Expected Outcome
 - **Best case**: RMSE ~11.6 (more capacity unlocks better fit)
 - **Discard threshold**: RMSE ≥ 11.940
+
+### Results (completed)
+- **Test RMSE**: 12.122 mph ❌ (worse than 11.940 best)
+- **Test MAE**: 5.815 mph | **R²**: 0.717 | **Runtime**: 1214s
+- **Status**: DISCARDED
+- **Analysis**: Val_mse diverged at epochs 4-5 (0.352→0.357→0.364) — clear overfitting. 96 hidden units over-parameterizes the model for 5-epoch training. **Conclusion: hidden=64 is the right capacity at this training length.**
+
+---
+
+## Iteration 7: Longer Training (10 epochs) — Best Config [AGENT HYPOTHESIS]
+
+**Date**: 2026-05-07
+**Status**: 🔄 IN PROGRESS
+
+### Hypothesis
+> "The Iter4 val_mse (0.351 at epoch 4) was still declining. Running the confirmed best config for 10 epochs instead of 5 should push RMSE lower without adding any architectural risk."
+
+### Agent Reasoning
+
+Both Iter5 (deeper LSTM) and Iter6 (wider hidden) failed. The pattern: the Iter4 architecture (1-layer LSTM, hidden=64, GAT, correlation K=5) is the stable optimum — changing it causes overfitting or instability. The only remaining lever without architectural risk is **more training**.
+
+Iter4 val_mse trajectory was still declining at epoch 4 (0.351), suggesting the model hasn't fully converged. 10 epochs at the same LR should reach a better minimum. Expected runtime ~1900s.
+
+### Configuration
+```
+Architecture: Per-node 1-layer LSTM + GAT (1 head) + residual skip  [Iter4 config]
+Hidden: 64, K: 5, adj_type: correlation
+LR: 1e-3, Epochs: 10, Batch: 64, Seed: 0
+```
+
+### Expected Outcome
+- **Best case**: RMSE ~11.5 (val_mse keeps declining past epoch 5)
+- **Discard threshold**: RMSE ≥ 11.940
