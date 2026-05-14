@@ -383,3 +383,34 @@ LR: 1e-3, Epochs: 10, Batch: 64, Seed: 0
 - **Status**: KEPT — new best
 - **Val_mse trajectory**: 0.356 → 0.353 → 0.352 → 0.351 → 0.352 → 0.355 → 0.347 → 0.348 → 0.348 → 0.350. Hit a new floor at 0.347 around epoch 7, then slight rise — suggests the model has converged to its architectural ceiling. Train_mse still declines (0.310 at epoch 10) but val_mse flat → diminishing return from more epochs at this LR.
 - **Conclusion**: 10 epochs slightly better than 5, but the architecture itself is the bottleneck now, not training length. Next iterations must change topology or spatial receptive field.
+
+---
+
+## Iteration 8: Two GAT Layers — Expand Spatial Receptive Field [AGENT HYPOTHESIS]
+
+**Date**: 2026-05-14
+**Status**: 🔄 IN PROGRESS
+
+### Hypothesis
+> "A second GAT layer (with residual skip) expands each node's receptive field from 1-hop (K=5 direct neighbors) to 2-hop (~25 indirect neighbors via neighbors-of-neighbors). With skip connections, the second layer can be reduced to identity if unhelpful, bounding the downside."
+
+### Agent Reasoning
+
+Iter7 surfaced the diagnosis cleanly: train_mse keeps declining (0.310 at epoch 10) but val_mse plateaus at 0.347–0.350. The model is fitting everything its receptive field reveals — the bottleneck is now *what each node can see*, not training length or per-node capacity.
+
+The Iter5/Iter6 failures rule out adding capacity to the *temporal* encoder (deeper LSTM, wider hidden) — they overfit a 12-step window. The natural alternative is to add capacity on the *spatial* side: more layers, not bigger ones. Two graph layers with K=5 correlation adjacency gives each node access to ~5² = 25 traffic-coupled sensors indirectly. Skip connections per layer mean the model can recover the Iter7 representation by zeroing the second layer's contribution — so the downside is bounded.
+
+Choosing depth over breadth (K) here because skip-protected depth is safer than naive K-expansion: GAT attention can't *skip* a neighbor entirely if K is too large and the genuinely-relevant signal is drowned in soft noise. With 2 layers + skip, each layer can specialize: layer-1 = immediate-neighbor influence, layer-2 = corridor-wide propagation.
+
+### Configuration
+```
+Architecture: Per-node 1-layer LSTM + 2× GAT (1 head, residual skip per layer)
+Hidden: 64, K: 5, adj_type: correlation
+LR: 1e-3, Epochs: 10, Batch: 64, Seed: 0
+```
+
+### Expected Outcome
+- **Best case**: RMSE ~11.6 (corridor-wide context improves long-horizon forecast)
+- **Discard threshold**: RMSE ≥ 11.912
+- **Risk**: over-smoothing across 2 hops despite skip; mitigated because residuals let each layer fall back to identity
+- **Runtime estimate**: ~2700s (~45 min) — GAT message passing doubled, LSTM unchanged
