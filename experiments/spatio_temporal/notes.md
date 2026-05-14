@@ -376,3 +376,10 @@ LR: 1e-3, Epochs: 10, Batch: 64, Seed: 0
 ### Expected Outcome
 - **Best case**: RMSE ~11.5 (val_mse keeps declining past epoch 5)
 - **Discard threshold**: RMSE ≥ 11.940
+
+### Results (completed)
+- **Test RMSE**: 11.912 mph ✅ (beat 11.940 by +0.028)
+- **Test MAE**: 6.244 mph | **R²**: 0.727 | **Runtime**: 2287s
+- **Status**: KEPT — new best
+- **Val_mse trajectory**: 0.356 → 0.353 → 0.352 → 0.351 → 0.352 → 0.355 → 0.347 → 0.348 → 0.348 → 0.350. Hit a new floor at 0.347 around epoch 7, then slight rise — suggests the model has converged to its architectural ceiling. Train_mse still declines (0.310 at epoch 10) but val_mse flat → diminishing return from more epochs at this LR.
+- **Conclusion**: 10 epochs slightly better than 5, but the architecture itself is the bottleneck now, not training length. Next iterations must change topology or spatial receptive field.
