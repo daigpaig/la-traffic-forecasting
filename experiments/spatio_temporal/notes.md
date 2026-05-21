@@ -487,3 +487,31 @@ Note the striking coincidence: Iter 9 (12.084) ≈ Iter 2 (12.083, per-node LSTM
 ### Implication for backlog
 - **Tier 1 partly closed.** Multi-seed re-runs of Iter 4 and Iter 7 still needed to put error bars on the small graph-contribution numbers (0.17-0.19 RMSE is well within typical seed noise on this dataset).
 - The deferred Iter "9-original" (3-layer GAT) is now lower-priority: even if it lands at RMSE 11.85, it would represent a graph-side gain of ~0.05 on top of an already-small ~0.19 graph contribution. Marginal-value-of-effort is low until seed noise is bounded.
+
+---
+
+## Iteration 10: Multi-seed Iter 7 (seed=1) [TIER 1 MEASUREMENT]
+
+**Date**: 2026-05-21
+**Status**: 🔄 IN PROGRESS
+**Tier**: 1 (methodological control — NOT subject to keep/discard gate)
+
+### Hypothesis
+> "Re-run the Iter 7 config (per-node 1-layer LSTM, hidden=64, 1× GAT, correlation K=5, 10 epochs) with seed=1. If RMSE lands within ±0.15 of Iter 7's 11.912, the headline number is reproducible across seeds. If RMSE is >12.0 or <11.8, the 0.17 RMSE graph contribution (Iter 9 vs Iter 7) is inside seed noise and cannot be claimed."
+
+### Agent Reasoning
+
+Iter 9 revealed the GNN contribution to be small in RMSE (~0.17). Before any further architectural change, the protocol requires bounding seed noise on that number. This is the first of two additional seeds (1, 2) needed to claim a 3-seed mean ± std for Iter 7.
+
+### Configuration
+```
+Architecture: Per-node 1-layer LSTM + 1× GAT (1 head, residual skip) [Iter 7 config]
+Hidden: 64, K: 5, adj_type: correlation
+LR: 1e-3, Epochs: 10, Batch: 64, Seed: 1 (the only change vs Iter 7)
+```
+
+### Expected Outcome (calibration only)
+- **Reproducible regime**: RMSE in [11.8, 12.05]
+- **Outside that band**: the Iter 7 → Iter 9 graph-contribution claim becomes noise-bounded
+- **Runtime estimate**: ~2200-2400s (matches Iter 7's 2288s)
+- **Logic gate**: not applied (Tier 1). Always commit + log.
