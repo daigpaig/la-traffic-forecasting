@@ -462,3 +462,28 @@ LR: 1e-3, Epochs: 10, Batch: 64, Seed: 0
 - **If RMSE > 14.0**: graph is essential — original GNN framing stands
 - **Runtime estimate**: ~1800-2200s (no GAT cost; should be slightly faster than Iter 7)
 - **Logic gate**: not applied (Tier 1 measurement). Always commit + log regardless of outcome.
+
+### Results (completed)
+- **Test RMSE**: 12.083941 mph
+- **Test MAE**: 6.246741 mph
+- **Test R²**: 0.718930
+- **Runtime**: 1372.61s (~23 min — 40% faster than Iter 7 as predicted)
+- **Status**: `tier1` measurement, committed unconditionally per protocol
+- **Val_mse trajectory**: 0.367 → 0.375 → 0.361 → 0.365 → 0.358 → 0.358 → 0.362 → 0.360 → 0.357 → 0.357. Plateaus ~0.357-0.362; never reaches Iter 7's floor of 0.347.
+
+### Decomposition (first datapoint of the revised mission)
+
+| Stage | RMSE | Δ vs prior | MAE | Notes |
+|---|---|---|---|---|
+| Temporal baseline (shared LSTM) | 15.000 | — | 8.912 | Iter 1 design |
+| Per-node LSTM, NO graph (Iter 9) | **12.084** | **−2.916** | 6.247 | Per-node fix alone |
+| Per-node LSTM + 1× GAT corr K=5 (Iter 7) | 11.912 | −0.172 | 6.244 | Graph adds tiny RMSE, ~0 MAE |
+| Per-node LSTM + 2× GAT corr K=5 (Iter 8) | 11.896 | −0.016 | 5.905 | 2nd GAT layer helps MAE (+0.34) |
+
+**The dominant lever is the per-node temporal encoder, not the graph.** The graph contributes a small RMSE refinement (~0.19 cumulatively) and a more substantial MAE/calibration improvement at depth 2. This reframes the headline: it is more accurate to say "per-node temporal modeling closes ~95% of the gap to the GNN-augmented best; the graph contributes the remaining ~5% in RMSE and a meaningful calibration improvement in MAE."
+
+Note the striking coincidence: Iter 9 (12.084) ≈ Iter 2 (12.083, per-node LSTM + 1× GCN physical K=5). Adding a GCN over physical adjacency contributed essentially zero, confirming that the *topology* (correlation > physical) was the operative improvement from Iter 4 onward, not the addition of any graph layer per se.
+
+### Implication for backlog
+- **Tier 1 partly closed.** Multi-seed re-runs of Iter 4 and Iter 7 still needed to put error bars on the small graph-contribution numbers (0.17-0.19 RMSE is well within typical seed noise on this dataset).
+- The deferred Iter "9-original" (3-layer GAT) is now lower-priority: even if it lands at RMSE 11.85, it would represent a graph-side gain of ~0.05 on top of an already-small ~0.19 graph contribution. Marginal-value-of-effort is low until seed noise is bounded.
