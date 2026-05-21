@@ -426,28 +426,39 @@ LR: 1e-3, Epochs: 10, Batch: 64, Seed: 0
 
 ---
 
-## Iteration 9: Three GAT Layers — Push Spatial Depth [AGENT HYPOTHESIS]
+## Iteration 9 (superseded plan): Three GAT Layers
+
+Originally drafted as a Tier 2 spatial-depth extension after Iter 8. **Deferred** under the revised 2026-05-21 protocol, which requires Tier 1 methodological controls (especially the temporal-encoder-only ablation) before any further architectural Tier 2 / Tier 3 changes. Will revisit after Tier 1 closes.
+
+---
+
+## Iteration 9 (actual): Temporal-Encoder-Only Ablation [TIER 1 MEASUREMENT]
 
 **Date**: 2026-05-21
-**Status**: 🔄 PLANNED — to execute next
+**Status**: 🔄 IN PROGRESS
+**Tier**: 1 (methodological control — NOT subject to keep/discard gate)
 
 ### Hypothesis
-> "Iter8 showed adding a second GAT layer improved RMSE and substantially improved MAE. A third GAT layer extends the receptive field to 3-hop (~125 corridor-coupled sensors via K=5²·5). With residual skips per layer, the third layer can collapse to identity if unhelpful, bounding downside as in Iter8."
+> "Run the Iter-7 substrate (per-node 1-layer LSTM, hidden=64, 10 epochs, seed=0) with **no graph layer** (`--graph-layers 0`). If test RMSE is within 0.5 of Iter 7's 11.912, the spatial component is not the source of the gain over the temporal baseline (15.000), and the project's GNN framing requires revision. If RMSE ≥ 14.0, the spatial component is doing real work."
 
 ### Agent Reasoning
 
-Iter8 confirmed that spatial depth is a productive axis: 1-hop → 2-hop gave +0.017 RMSE and +0.34 MAE. The MAE-heavy gain suggests the 2nd layer is fixing per-point calibration errors at congestion peaks where local-neighbor signal is insufficient. 3-hop receptive field should capture longer corridors (a few miles of highway), which is where traffic shockwaves propagate over a 1-hour horizon.
+The revised program.md mandates this measurement before any further architectural change. The motivation: the headline "GNN beats temporal LSTM by 3.1 RMSE" rests on a comparison between two architectures that differ in *both* (a) per-node vs. shared temporal encoding and (b) presence of a graph layer. If per-node LSTM alone closes most of the gap, the graph is icing — and the decomposition we now owe (per the revised mission, decomposing the gain into encoder vs. topology vs. operator) starts with a very different denominator.
 
-Risk: over-smoothing finally bites. Mitigated by per-layer skip (model can revert to Iter8 by zeroing 3rd layer's contribution) and by the fact that GAT's learned attention can soft-attenuate noisy 3-hop signals.
+Concretely: the temporal baseline (15.000) was built with a *shared* LSTM treating 207 sensors as 207 features (Iter 1's broken design, reframed). Iter 2 fixed this to per-node — and that fix alone may explain most of the gain to 12.083, with the GCN/GAT contributing the remaining ~0.2.
 
-### Configuration (planned)
+This run uses the spatio-temporal codepath (same data loader, same windowing, same eval) but with the graph stack disabled — so any difference vs. Iter 7 is *purely* the graph's contribution.
+
+### Configuration
 ```
-Architecture: Per-node 1-layer LSTM + 3× GAT (1 head, residual skip per layer)
-Hidden: 64, K: 5, adj_type: correlation
+Architecture: Per-node 1-layer LSTM, hidden=64, NO graph layers
+Adjacency: built but unused (graph_layers=0 means the forward loop is a no-op)
 LR: 1e-3, Epochs: 10, Batch: 64, Seed: 0
 ```
 
-### Expected Outcome
-- **Best case**: RMSE ~11.7 (3-hop corridor context for long-horizon forecast)
-- **Discard threshold**: RMSE ≥ 11.896
-- **Runtime estimate**: ~2700-3000s (each extra GAT layer adds ~400s based on Iter7→Iter8)
+### Expected Outcome (this run is a measurement; "expected" is calibration only)
+- **If RMSE ≤ 12.5**: graph contributes very little — must revise project framing
+- **If 12.5 < RMSE ≤ 14.0**: graph contributes meaningfully but per-node encoder dominates
+- **If RMSE > 14.0**: graph is essential — original GNN framing stands
+- **Runtime estimate**: ~1800-2200s (no GAT cost; should be slightly faster than Iter 7)
+- **Logic gate**: not applied (Tier 1 measurement). Always commit + log regardless of outcome.
