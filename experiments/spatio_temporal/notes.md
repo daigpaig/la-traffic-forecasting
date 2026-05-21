@@ -388,7 +388,7 @@ LR: 1e-3, Epochs: 10, Batch: 64, Seed: 0
 
 ## Iteration 8: Two GAT Layers — Expand Spatial Receptive Field [AGENT HYPOTHESIS]
 
-**Date**: 2026-05-14
+**Date**: 2026-05-21 (drafted 2026-05-14, executed 2026-05-21)
 **Status**: 🔄 IN PROGRESS
 
 ### Hypothesis
@@ -414,3 +414,40 @@ LR: 1e-3, Epochs: 10, Batch: 64, Seed: 0
 - **Discard threshold**: RMSE ≥ 11.912
 - **Risk**: over-smoothing across 2 hops despite skip; mitigated because residuals let each layer fall back to identity
 - **Runtime estimate**: ~2700s (~45 min) — GAT message passing doubled, LSTM unchanged
+
+### Results (completed)
+- **Test RMSE**: 11.895854 mph ✅ (beat 11.912 by +0.017)
+- **Test MAE**: 5.905 mph (vs 6.244 — substantial calibration gain, +0.34 mph)
+- **Test R²**: 0.728 | **Runtime**: 2109s (~35 min — *faster* than projected)
+- **Status**: KEPT — new best
+- **Val_mse trajectory**: 0.364 → 0.361 → 0.358 → 0.350 → 0.352 → 0.351 → 0.351 → 0.350 → 0.350 → **0.347**. Monotonic decline with one wobble at epoch 5; final epoch hit Iter7's floor.
+- **Analysis**: The RMSE gain is small (+0.017) but the MAE gain (+0.34) is meaningful — the second GAT layer noticeably improves per-point calibration even when squared-error gains are modest. This is the signature of *outliers* (large per-point errors at congestion peaks) being smoothed by 2-hop spatial context: averaging RMSE squashes most of the improvement, but MAE reveals it. Skip connections worked as designed — no over-smoothing collapse despite 2 layers.
+- **Conclusion**: 2 GAT layers > 1 GAT layer on correlation graph. Spatial depth is a useful axis; per-node temporal capacity is not (Iter5/6). Next: try **3 GAT layers** (does the trend continue?) or **DropEdge** (regularize 2-hop aggregation).
+
+---
+
+## Iteration 9: Three GAT Layers — Push Spatial Depth [AGENT HYPOTHESIS]
+
+**Date**: 2026-05-21
+**Status**: 🔄 PLANNED — to execute next
+
+### Hypothesis
+> "Iter8 showed adding a second GAT layer improved RMSE and substantially improved MAE. A third GAT layer extends the receptive field to 3-hop (~125 corridor-coupled sensors via K=5²·5). With residual skips per layer, the third layer can collapse to identity if unhelpful, bounding downside as in Iter8."
+
+### Agent Reasoning
+
+Iter8 confirmed that spatial depth is a productive axis: 1-hop → 2-hop gave +0.017 RMSE and +0.34 MAE. The MAE-heavy gain suggests the 2nd layer is fixing per-point calibration errors at congestion peaks where local-neighbor signal is insufficient. 3-hop receptive field should capture longer corridors (a few miles of highway), which is where traffic shockwaves propagate over a 1-hour horizon.
+
+Risk: over-smoothing finally bites. Mitigated by per-layer skip (model can revert to Iter8 by zeroing 3rd layer's contribution) and by the fact that GAT's learned attention can soft-attenuate noisy 3-hop signals.
+
+### Configuration (planned)
+```
+Architecture: Per-node 1-layer LSTM + 3× GAT (1 head, residual skip per layer)
+Hidden: 64, K: 5, adj_type: correlation
+LR: 1e-3, Epochs: 10, Batch: 64, Seed: 0
+```
+
+### Expected Outcome
+- **Best case**: RMSE ~11.7 (3-hop corridor context for long-horizon forecast)
+- **Discard threshold**: RMSE ≥ 11.896
+- **Runtime estimate**: ~2700-3000s (each extra GAT layer adds ~400s based on Iter7→Iter8)
