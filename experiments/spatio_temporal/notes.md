@@ -632,3 +632,29 @@ LR: 1e-3, Epochs: 5 (the Iter 4 substrate), Batch: 64, Seed: 1
 - **Test MAE**: 5.883631 mph
 - **Test R²**: 0.724904 | **Runtime**: 1117.16s
 - **Status**: `tier1` measurement. Iter 4 config 2-seed range so far: 0.015 RMSE (seed 0 = 11.940, seed 1 = 11.955). Seed=2 (Iter 13) to finalize.
+
+---
+
+## Iteration 13: Multi-seed Iter 4 (seed=2) — closes Tier 1 [TIER 1 MEASUREMENT]
+
+**Date**: 2026-05-21
+**Status**: 🔄 IN PROGRESS
+**Tier**: 1 (methodological control — NOT subject to keep/discard gate)
+
+### Hypothesis
+> "Final seed for the Iter 4 config (5 epochs). Completes the last Tier 1 deliverable. With Iter 4 3-seed mean ± std in hand, the Iter 4 → Iter 7 'longer training' gain (0.028 RMSE) can be tested directly: if the Iter 4 and Iter 7 3-seed means overlap within combined std, training length 5→10 epochs is confirmed as noise and that axis closes permanently."
+
+### Agent Reasoning
+
+After this run all three Tier 1 deliverables are complete (temporal-only ablation, 3-seed Iter 7, 3-seed Iter 4). The protocol then unlocks Tier 2. The decision this run feeds: Iter 4 vs Iter 7 — is 10 epochs worth 2× the compute? Iter 11 already showed the Iter 7 std is 0.019; if Iter 4's mean is within ~0.02 of Iter 7's 11.920, longer training bought nothing.
+
+### Configuration
+```
+Architecture: Per-node 1-layer LSTM + 1× GAT (1 head, residual skip) [Iter 4 config]
+Hidden: 64, K: 5, adj_type: correlation
+LR: 1e-3, Epochs: 5, Batch: 64, Seed: 2
+```
+
+### Expected Outcome (calibration only)
+- **Runtime estimate**: ~1000-1100s
+- **Logic gate**: not applied (Tier 1). Always commit + log.
