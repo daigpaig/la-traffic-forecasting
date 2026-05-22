@@ -515,3 +515,21 @@ LR: 1e-3, Epochs: 10, Batch: 64, Seed: 1 (the only change vs Iter 7)
 - **Outside that band**: the Iter 7 → Iter 9 graph-contribution claim becomes noise-bounded
 - **Runtime estimate**: ~2200-2400s (matches Iter 7's 2288s)
 - **Logic gate**: not applied (Tier 1). Always commit + log.
+
+### Results (completed)
+- **Test RMSE**: 11.941213 mph (Iter 7 seed=0 was 11.912427)
+- **Test MAE**: 5.746613 mph (Iter 7 seed=0 was 6.243891)
+- **Test R²**: 0.725531
+- **Runtime**: 2010.54s
+- **Status**: `tier1` measurement, committed unconditionally
+- **Val_mse trajectory**: 0.359 → 0.355 → 0.352 → 0.354 → 0.351 → 0.351 → 0.350 → 0.353 → 0.352 → 0.353. Same plateau band as seed=0 (~0.350).
+
+### Analysis — seed noise is large relative to the claims
+
+| Iter 7 config | RMSE | MAE |
+|---|---|---|
+| seed=0 (Iter 7) | 11.912 | 6.244 |
+| seed=1 (Iter 10) | 11.941 | 5.747 |
+| **range so far** | **0.029** | **0.497** |
+
+Two-seed range on RMSE (0.029) is already the same size as the entire Iter 4 → Iter 7 "longer training" gain (0.028) and ~17% of the Iter 9 → Iter 7 graph contribution (0.172). **MAE is far noisier**: the 0.50 mph seed swing is *larger* than Iter 8's headline 0.34 mph MAE improvement — meaning the Iter 8 MAE claim is not yet defensible. Seed=2 (Iter 11) needed before any std can be quoted, but the direction is clear: small per-iteration deltas on this dataset are seed-dominated.
