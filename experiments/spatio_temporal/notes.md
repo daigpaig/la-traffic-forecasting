@@ -626,3 +626,9 @@ LR: 1e-3, Epochs: 5 (the Iter 4 substrate), Batch: 64, Seed: 1
 ### Expected Outcome (calibration only)
 - **Runtime estimate**: ~1000-1100s (half of Iter 7 — 5 epochs)
 - **Logic gate**: not applied (Tier 1). Always commit + log.
+
+### Results (completed)
+- **Test RMSE**: 11.954827 mph (Iter 4 seed=0 was 11.939847)
+- **Test MAE**: 5.883631 mph
+- **Test R²**: 0.724904 | **Runtime**: 1117.16s
+- **Status**: `tier1` measurement. Iter 4 config 2-seed range so far: 0.015 RMSE (seed 0 = 11.940, seed 1 = 11.955). Seed=2 (Iter 13) to finalize.
