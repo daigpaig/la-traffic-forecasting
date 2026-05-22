@@ -706,3 +706,33 @@ All three Tier 1 controls done (Iter 9 ablation, Iter 10-11 = 3-seed Iter 7, Ite
 
 ### Tier 2 now unlocked
 Per protocol, Tier 2 architecture changes may proceed. Constraint going forward: with a seed-noise floor of ~0.02 RMSE, any Tier 2 change claiming < 0.05 RMSE must be multi-seed to be believed. Single-seed screening still allowed, but cannot be a final claim.
+
+---
+
+## Iteration 14: Sparser Correlation Graph (K=3) [TIER 2 — screening]
+
+**Date**: 2026-05-21
+**Status**: 🔄 IN PROGRESS
+**Tier**: 2 (architecture change — multi-metric logic gate applies)
+
+### Hypothesis
+> "K=5 correlation adjacency may aggregate too widely — the documented 'spatial blurring' failure mode (T-class). Reducing to K=3 keeps each node's 3 most-correlated neighbors only, sharpening message-passing. If the graph's job is to inject a *little* corridor context (Tier 1 showed its total contribution is only ~0.16 RMSE), a sparser graph may deliver that context with less over-smoothing."
+
+### Agent Reasoning
+
+Tier 1 established the graph contributes a real but small ~0.16 RMSE. The question Tier 2 opens: is that 0.16 the *ceiling* of what topology can give, or is K=5 leaving signal on the table by over-smoothing? K=3 is the cheapest possible probe — one CLI flag, no code change — and it directly targets the over-smoothing failure mode. The 3 highest-correlation neighbors are almost certainly same-corridor sensors; neighbors 4-5 are where spurious correlation (time-of-day coupling between unrelated roads) starts to creep in.
+
+This is a **screening run** (single seed=0). Per the revised reproducibility constraint, if it lands meaningfully below the Iter 7 3-seed mean (11.920), it earns a multi-seed confirmation; if within noise, it's logged and we move on.
+
+### Configuration
+```
+Architecture: Per-node 1-layer LSTM + 1× GAT (1 head, residual skip) [Iter 7 config]
+Hidden: 64, K: 3 (down from 5), adj_type: correlation
+LR: 1e-3, Epochs: 10, Batch: 64, Seed: 0
+```
+
+### Expected Outcome
+- **Best case**: RMSE ~11.85 (sharper graph, less blurring)
+- **Gate**: current best = Iter 8's 11.896. KEEP if RMSE < 11.896 AND MAE does not rise > 0.3 vs Iter 8's 5.905.
+- **Realistic**: given the graph's total budget is ~0.16 RMSE, expect a result within ±0.05 of Iter 7 — likely a screening "discard" unless K-sparsity genuinely matters.
+- **Runtime estimate**: ~1900-2200s (fewer edges than K=5)
