@@ -560,3 +560,43 @@ LR: 1e-3, Epochs: 10, Batch: 64, Seed: 2 (only change vs Iter 7 / Iter 10)
 - **Consistent regime**: RMSE in [11.85, 12.0], consolidating a tight std
 - **Runtime estimate**: ~2000-2300s
 - **Logic gate**: not applied (Tier 1). Always commit + log.
+
+### Results (completed)
+- **Test RMSE**: 11.905019 mph
+- **Test MAE**: 5.819964 mph
+- **Test R²**: 0.727192
+- **Runtime**: 1916.98s
+- **Status**: `tier1` measurement, committed unconditionally
+
+### 3-seed summary for the Iter 7 config — Tier 1 deliverable CLOSED
+
+| seed | RMSE | MAE |
+|---|---|---|
+| 0 (Iter 7) | 11.912427 | 6.243891 |
+| 1 (Iter 10) | 11.941213 | 5.746613 |
+| 2 (Iter 11) | 11.905019 | 5.819964 |
+| **mean** | **11.91955** | **5.93682** |
+| **sample std** | **0.01912** | **0.26845** |
+
+**Headline number (revised mission deliverable):** Iter 7 config = **RMSE 11.920 ± 0.019**, MAE 5.94 ± 0.27 (3 seeds).
+
+### What this settles
+
+1. **Graph RMSE contribution is real but small.** Iter 9 (no graph) = 12.084 vs Iter 7 3-seed mean 11.920 → gap **0.164**, which is **8.6× the RMSE std**. Even though Iter 9 is single-seed, a gap this many std wide is not noise. The graph helps — by ~0.16 RMSE.
+
+2. **The Iter 7 → Iter 8 depth gain is NOT established.** Iter 8 (2× GAT) single-seed RMSE 11.896 sits only 1.3 std below the Iter 7 mean (11.920 ± 0.019). Within plausible seed variation. Cannot claim 2 GAT layers > 1 without an Iter 8 multi-seed run.
+
+3. **The Iter 8 MAE "improvement" is dead.** Iter 8 MAE 5.905 vs Iter 7 MAE 5.937 ± 0.268 — Iter 8 is *0.1 std* from the mean. The earlier "2nd GAT layer improves calibration by 0.34 mph" claim was pure seed noise. MAE on this dataset/architecture has a std of 0.27 — almost any single-run MAE delta below ~0.5 is uninterpretable.
+
+4. **The Iter 4 → Iter 7 "longer training" gain is suspect.** That gain was 0.028 RMSE ≈ 1.5 std. Iter 4 multi-seed (next) will confirm, but it is very likely also within noise.
+
+### Revised decomposition (RMSE, with the one std we now have)
+
+| Stage | RMSE | Real effect? |
+|---|---|---|
+| Temporal baseline (shared LSTM) | 15.000 | — |
+| Per-node LSTM, no graph (Iter 9) | 12.084 | **−2.92, unambiguously real** |
+| + GAT correlation K=5 (Iter 7, 3-seed) | 11.920 ± 0.019 | **−0.16, real (8.6σ)** |
+| + 2nd GAT layer (Iter 8, 1-seed) | 11.896 | −0.02, within noise — unproven |
+
+**Bottom line for the project:** two real effects only — the per-node temporal encoder (huge) and the presence of a correlation-graph GAT layer (small but solid). Everything finer (depth, epochs, hidden size, MAE deltas) is at or below the 0.02–0.27 noise floor.
