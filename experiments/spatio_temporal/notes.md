@@ -600,3 +600,29 @@ LR: 1e-3, Epochs: 10, Batch: 64, Seed: 2 (only change vs Iter 7 / Iter 10)
 | + 2nd GAT layer (Iter 8, 1-seed) | 11.896 | −0.02, within noise — unproven |
 
 **Bottom line for the project:** two real effects only — the per-node temporal encoder (huge) and the presence of a correlation-graph GAT layer (small but solid). Everything finer (depth, epochs, hidden size, MAE deltas) is at or below the 0.02–0.27 noise floor.
+
+---
+
+## Iteration 12: Multi-seed Iter 4 (seed=1) [TIER 1 MEASUREMENT]
+
+**Date**: 2026-05-21
+**Status**: 🔄 IN PROGRESS
+**Tier**: 1 (methodological control — NOT subject to keep/discard gate)
+
+### Hypothesis
+> "Re-run the Iter 4 config (Iter 7 config but 5 epochs instead of 10) at seed=1. Iter 4 seed=0 = 11.940. Combined with Iter 11's finding that the Iter 7 config has RMSE 11.920 ± 0.019, a 2–3 seed Iter 4 mean tells us whether the Iter 4 → Iter 7 'longer training' gain (0.028 RMSE) is real or noise."
+
+### Agent Reasoning
+
+Last Tier 1 deliverable. The Iter 7 3-seed std is tight (0.019). The Iter 4 → Iter 7 gap is 0.028 — only ~1.5× that std. If Iter 4's own 3-seed mean overlaps the Iter 7 mean within combined std, then "10 epochs beats 5 epochs" was never a real effect and the training-length axis is closed. This run is seed=1; seed=2 (Iter 13) follows to complete the set.
+
+### Configuration
+```
+Architecture: Per-node 1-layer LSTM + 1× GAT (1 head, residual skip) [Iter 4 config]
+Hidden: 64, K: 5, adj_type: correlation
+LR: 1e-3, Epochs: 5 (the Iter 4 substrate), Batch: 64, Seed: 1
+```
+
+### Expected Outcome (calibration only)
+- **Runtime estimate**: ~1000-1100s (half of Iter 7 — 5 epochs)
+- **Logic gate**: not applied (Tier 1). Always commit + log.
