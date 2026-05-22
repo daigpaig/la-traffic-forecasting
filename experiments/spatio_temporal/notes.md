@@ -658,3 +658,51 @@ LR: 1e-3, Epochs: 5, Batch: 64, Seed: 2
 ### Expected Outcome (calibration only)
 - **Runtime estimate**: ~1000-1100s
 - **Logic gate**: not applied (Tier 1). Always commit + log.
+
+### Results (completed)
+- **Test RMSE**: 11.957802 mph
+- **Test MAE**: 5.953694 mph
+- **Test R²**: 0.724767 | **Runtime**: 1057.57s
+- **Status**: `tier1` measurement, committed unconditionally
+
+### 3-seed summary for the Iter 4 config — Tier 1 deliverable CLOSED
+
+| seed | RMSE | MAE |
+|---|---|---|
+| 0 (Iter 4) | 11.939847 | 5.772 |
+| 1 (Iter 12) | 11.954827 | 5.884 |
+| 2 (Iter 13) | 11.957802 | 5.954 |
+| **mean** | **11.9508** | **5.8698** |
+| **sample std** | **0.0096** | **0.0916** |
+
+### Iter 4 vs Iter 7 — does longer training (5→10 epochs) help?
+
+| config | RMSE (3-seed) | MAE (3-seed) |
+|---|---|---|
+| Iter 4 — 5 epochs | 11.951 ± 0.010 | 5.87 ± 0.09 |
+| Iter 7 — 10 epochs | 11.920 ± 0.019 | 5.94 ± 0.27 |
+| difference (4 − 7) | **0.031** | −0.07 |
+
+Standard error of the RMSE difference = 0.0124 → **diff / SE = 2.53**. This is *borderline significant*: a z-test would call it real (p ≈ 0.01), but with only 3 seeds per arm a two-sample t-test (~4 dof) gives p ≈ 0.07. So **longer training produces a small, weakly-significant RMSE gain (~0.03)** — not dismissible as noise, but not firmly established either. (Earlier hand-waving that it was "very likely noise" was wrong; the data say borderline-real.) The MAE difference is pure noise (overlapping by a wide margin).
+
+Note Iter 7's std (0.019) is *larger* than Iter 4's (0.010) — more epochs add seed variance, consistent with the late-epoch val_mse wobble seen in every 10-epoch run.
+
+---
+
+## TIER 1 COMPLETE — Decomposition summary (revised mission §3 deliverable)
+
+All three Tier 1 controls done (Iter 9 ablation, Iter 10-11 = 3-seed Iter 7, Iter 12-13 = 3-seed Iter 4). Final decomposition of the gain from the temporal baseline:
+
+| Stage | RMSE | Effect size | Verdict |
+|---|---|---|---|
+| Temporal baseline (shared LSTM) | 15.000 | — | — |
+| **+ Per-node temporal encoder** (Iter 9, no graph) | 12.084 | **−2.916** | **Real — dominant lever** |
+| **+ Correlation-GAT graph layer** (Iter 7, 3-seed) | 11.920 ± 0.019 | **−0.164** | **Real — 8.6σ, small** |
+| + Longer training 5→10 ep (Iter 4→7) | 11.920 vs 11.951 | −0.031 | Borderline (2.5 SE, t-p≈0.07) |
+| + 2nd GAT layer (Iter 8, 1-seed) | 11.896 | −0.024 | **Unproven** — single seed, 1.3σ |
+| Iter 8 MAE "gain" | — | −0.34 claimed | **Refuted** — within 0.27 MAE noise |
+
+**Headline for the writeup:** of the 3.1 RMSE total improvement over the temporal baseline, **94% comes from the per-node temporal encoder** and **~5% from the correlation graph**; sub-0.05 RMSE refinements (training length, graph depth) are at the edge of or below the seed-noise floor. The project's "spatial structure helps" claim is *true but quantitatively modest* — the graph is a real ~0.16 RMSE effect, not the headline driver.
+
+### Tier 2 now unlocked
+Per protocol, Tier 2 architecture changes may proceed. Constraint going forward: with a seed-noise floor of ~0.02 RMSE, any Tier 2 change claiming < 0.05 RMSE must be multi-seed to be believed. Single-seed screening still allowed, but cannot be a final claim.
