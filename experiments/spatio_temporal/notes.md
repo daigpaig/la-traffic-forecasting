@@ -533,3 +533,30 @@ LR: 1e-3, Epochs: 10, Batch: 64, Seed: 1 (the only change vs Iter 7)
 | **range so far** | **0.029** | **0.497** |
 
 Two-seed range on RMSE (0.029) is already the same size as the entire Iter 4 → Iter 7 "longer training" gain (0.028) and ~17% of the Iter 9 → Iter 7 graph contribution (0.172). **MAE is far noisier**: the 0.50 mph seed swing is *larger* than Iter 8's headline 0.34 mph MAE improvement — meaning the Iter 8 MAE claim is not yet defensible. Seed=2 (Iter 11) needed before any std can be quoted, but the direction is clear: small per-iteration deltas on this dataset are seed-dominated.
+
+---
+
+## Iteration 11: Multi-seed Iter 7 (seed=2) [TIER 1 MEASUREMENT]
+
+**Date**: 2026-05-21
+**Status**: 🔄 IN PROGRESS
+**Tier**: 1 (methodological control — NOT subject to keep/discard gate)
+
+### Hypothesis
+> "Third and final seed for the Iter 7 config. With seeds {0, 1, 2} complete, compute mean ± std of RMSE and MAE. The std directly bounds whether the Iter 9 → Iter 7 graph contribution (0.172 RMSE) and the Iter 7 → Iter 8 depth gain (0.016 RMSE) are real or noise."
+
+### Agent Reasoning
+
+Seeds 0 and 1 gave 11.912 and 11.941 (range 0.029). A third seed lets us state a proper 3-seed mean ± std — the headline number the revised mission requires. Decision rule after this run: if the graph contribution (≈0.17) is < 2× the std, it cannot be claimed as a real effect and the project framing must foreground the per-node encoder.
+
+### Configuration
+```
+Architecture: Per-node 1-layer LSTM + 1× GAT (1 head, residual skip) [Iter 7 config]
+Hidden: 64, K: 5, adj_type: correlation
+LR: 1e-3, Epochs: 10, Batch: 64, Seed: 2 (only change vs Iter 7 / Iter 10)
+```
+
+### Expected Outcome (calibration only)
+- **Consistent regime**: RMSE in [11.85, 12.0], consolidating a tight std
+- **Runtime estimate**: ~2000-2300s
+- **Logic gate**: not applied (Tier 1). Always commit + log.

@@ -7,4 +7,4 @@ b3c96ad	12.054943	746.41	keep	Iter3: GAT 1-head + per-node LSTM + skip, K=5 phys
 702f7b7	11.912427	2287.79	keep	Iter7: 10 epochs of Iter4 config — val_mse hits new floor 0.347 at epoch 7
 4376f59	11.895854	2109.54	keep	Iter8: 2-layer GAT + correlation K=5, 10 epochs — RMSE +0.017, MAE +0.34
 f6d32f8	12.083941	1372.61	tier1	Iter9: temporal-only ablation — per-node LSTM no graph; graph contributes only ~0.19 RMSE
-PENDING	11.941213	2010.54	tier1	Iter10: Iter7 config seed=1 — RMSE +0.029 vs seed=0; MAE swings 0.50 between seeds
+799178f	11.941213	2010.54	tier1	Iter10: Iter7 config seed=1 — RMSE +0.029 vs seed=0; MAE swings 0.50 between seeds
