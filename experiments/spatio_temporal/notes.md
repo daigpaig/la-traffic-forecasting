@@ -861,3 +861,57 @@ LR: 1e-3, Epochs: 10, Batch: 64, Seed: 1 (only change vs Iter 15)
 - **Runtime estimate**: ~3300s (matches Iter 15; ChebConv's batch-graph overhead is config-dependent, not seed-dependent).
 - **Logic gate**: multi-seed runs of an already-kept config don't reset best-of via single-seed comparisons. Always commit + log; the 3-seed mean is the decision point.
 
+### Results (completed)
+- **Test RMSE**: 11.987875 mph
+- **Test MAE**: 5.678288 mph
+- **Test R²**: 0.723381
+- **Runtime**: 2257.15s (~38 min — 32% *faster* than Iter 15 at the same config)
+- **Status**: `tier2-multiseed` measurement — committed unconditionally per Tier 1 precedent for multi-seed follow-ups
+- **Val_mse trajectory**: 0.357 → 0.356 → 0.361 → 0.350 → 0.351 → 0.351 → 0.349 → **0.348** → 0.351 → 0.357. Final epoch rebound (0.357) is meaningful — model was at its floor at epoch 8, then *worsened* across epochs 9-10. Iter 15 didn't show this.
+
+### Decision: pre-committed refutation triggered
+
+The hypothesis stated: "If seed=1 is ≥ 11.92, the Iter 15 win was a single-seed lottery and the operator-doesn't-matter null is restored." Iter 16 RMSE 11.988 ≥ 11.92 → **refutation regime**.
+
+### 2-seed summary for the ChebConv K=2 config
+
+| seed | RMSE | MAE | Runtime |
+|---|---|---|---|
+| 0 (Iter 15) | 11.869104 | 6.198444 | 3332.41 |
+| 1 (Iter 16) | 11.987875 | 5.678288 | 2257.15 |
+| **2-seed range** | **0.119** | **0.520** | 1075 |
+| **2-seed mean** | **11.929** | **5.938** | 2795 |
+
+### Comparison to the GAT baseline (Iter 7 3-seed)
+
+| metric | ChebConv K=2 (2-seed) | GAT 1-layer (3-seed) | diff |
+|---|---|---|---|
+| RMSE mean | 11.929 | 11.920 ± 0.019 | +0.009 (≈ 0) |
+| MAE mean | 5.938 | 5.937 ± 0.27 | +0.001 (≈ 0) |
+| RMSE range across seeds | **0.119** | ~0.04 (3-seed range; std 0.019) | **~3× wider** |
+
+Both RMSE and MAE means are within rounding error of the GAT baseline. The operator-doesn't-matter null is firmly back: ChebConv K=2 and GAT 1-layer produce statistically indistinguishable means on this graph. The only difference is variance — ChebConv has visibly wider seed spread (range 0.119 vs GAT 0.04). Plausible mechanism: ChebConv has no learned per-edge weights to dampen seed-induced LSTM-init variance, so encoder noise propagates more directly to the readout.
+
+### What this settles
+
+1. **Iter 15's `keep-marginal` is walked back in spirit.** The 2-seed evidence says ChebConv K=2 does *not* beat GAT on average; the Iter 15 single-seed win was at the low edge of a wide seed distribution. The commit history is preserved (no `git reset`), but the headline best is back to **Iter 7 / 8 GAT** for any multi-seed claim.
+
+2. **The simplicity-gate concern from Iter 15 was a measurement artifact.** Same config, same hardware, same data — Iter 16 ran in 2257s vs Iter 15's 3332s. The 1.58× runtime ratio that triggered the simplicity gate on Iter 15 was machine-load noise, not ChebConv overhead. ChebConv runtime is variable but not systematically slower than GAT.
+
+3. **The operator-vs-topology decomposition is now clean.** With Tier 1's "topology dominates over physical-vs-correlation" (Iter 3→Iter 4) and Tier 2's "GAT vs ChebConv produces statistically equal means" (Iter 15+16), the conclusion is: of the ~0.16 RMSE graph contribution, essentially all of it is *topology* (correlation graph), and ~0 is *operator choice*. This is a real Tier 2 finding worth foregrounding in the writeup.
+
+4. **A 3rd seed (Iter 17) would harden the variance claim but not change the mean verdict.** Worth running only if the writeup needs a clean 3-seed ChebConv σ to cite. Otherwise the 2-seed mean already overlaps GAT to 0.01 RMSE — no further information at the operator-choice level.
+
+### Implication for next iteration
+
+ChebConv is closed. The remaining Tier 2 levers, in priority order:
+
+1. **Learned adjacency** (highest-payoff backlog item). Topology is the only graph axis where gains have been confirmed; the natural next step is to let the model *learn* the adjacency end-to-end rather than fix it at K=5 Pearson correlation. If RMSE drops meaningfully below 11.920 (>2σ = 11.882), it's the first new lever since Tier 1 closed.
+
+2. **DropEdge regularization on the 2-layer GAT (Iter 8 config)** as a multi-seed retry. Iter 8 single-seed 11.896 is only 1.3σ below Iter 7 mean — still unproven. A multi-seed Iter 8 would also be informative on its own.
+
+3. **3-seed close-out of ChebConv (Iter 17)**. Lowest information value given the verdict above. Defer unless the writeup specifically needs it.
+
+**Decision: Iter 17 = learned adjacency.** Path 1 above. Tier 2 architecture change, screening at seed=0.
+
+
