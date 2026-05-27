@@ -829,3 +829,35 @@ Two paths, both defensible:
 **Decision: Path A.** Iter 16 = Iter 15 config at seed=1.
 
 ---
+
+## Iteration 16: Multi-seed Iter 15 (seed=1) — ChebConv K=2 confirmation [TIER 2 — multi-seed]
+
+**Date**: 2026-05-27
+**Status**: 🔄 IN PROGRESS
+**Tier**: 2 (multi-seed confirmation of a screening result)
+
+### Hypothesis
+> "Re-run the Iter 15 config (per-node 1-layer LSTM, hidden=64, 1× ChebConv K=2, correlation K=5, 10 epochs) at seed=1. Iter 15 seed=0 = 11.869 RMSE / 6.198 MAE. If seed=1 lands within ±0.05 of 11.869, ChebConv K=2 is plausibly a real ~0.05 RMSE improvement over GAT and earns the third seed (Iter 17). If seed=1 is ≥ 11.92, the Iter 15 win was a single-seed lottery and the operator-doesn't-matter null is restored."
+
+### Agent Reasoning
+
+The Iter 7 3-seed std on the GAT config was 0.019. Iter 15 sat 2.7σ below the Iter 7 mean — meaningful at single-seed, but the protocol now requires multi-seed for any sub-0.05 claim. Two seeds give a quick read on whether ChebConv has a different mean *or* a different variance from GAT. (ChebConv has no attention parameters, so prior would be lower seed variance; if Iter 16 lands within 0.02 of 11.869, that prior holds.)
+
+Equally important: the MAE direction. Iter 15 MAE 6.198 was +0.29 above Iter 8 — within the Iter 7 MAE seed-noise band (σ=0.27), so could be noise *or* systematic spectral-smoothing bias. Seed=1 tells us which.
+
+No code change. Single CLI flag swap: `--seed 1`.
+
+### Configuration
+```
+Architecture: Per-node 1-layer LSTM + 1× ChebConv (K=2) + residual skip  [Iter 15 config]
+Hidden: 64, adj_type: correlation, K_neighbors: 5
+LR: 1e-3, Epochs: 10, Batch: 64, Seed: 1 (only change vs Iter 15)
+```
+
+### Expected Outcome
+- **Confirmation regime**: RMSE in [11.83, 11.91], MAE in [5.95, 6.35] → fire Iter 17 (seed=2) for the 3-seed mean.
+- **Refutation regime**: RMSE ≥ 11.92 → Iter 15 was lottery; restore GAT as the operator.
+- **Ambiguous regime**: RMSE in [11.91, 11.92] → still fire Iter 17 to break the tie.
+- **Runtime estimate**: ~3300s (matches Iter 15; ChebConv's batch-graph overhead is config-dependent, not seed-dependent).
+- **Logic gate**: multi-seed runs of an already-kept config don't reset best-of via single-seed comparisons. Always commit + log; the 3-seed mean is the decision point.
+
