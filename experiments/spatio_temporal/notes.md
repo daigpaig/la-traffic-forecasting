@@ -754,4 +754,39 @@ Compared against the established 3-seed Iter 7 mean (11.920 ± 0.019):
 The Tier 1 finding said the graph contributes ~0.16 RMSE — small but real. K=3 actually *erodes* that contribution: dropping 2 of every node's 5 most-correlated neighbors removes some genuinely informative signal (corridor-mate sensors), not just spurious correlation. The "less smoothing" intuition was wrong for this graph — K=5 was already near-minimal for the operative correlated-neighbor set.
 
 ### Implication
-Topology sparsity is not the lever. The graph's small RMSE budget is **already being collected** by the K=5 correlation adjacency. Further gains need a different mechanism: either a different operator (ChebConv — next), or a learned adjacency that can re-route edges, not just prune them.
+Topology sparsity is not the lever. The graph's small RMSE budget is **already being collected** by the K=5 correlation adjacency. Further gains need a different mechanism: either a different operator (ChebConv — Iter 15), or a learned adjacency that can re-route edges, not just prune them.
+
+---
+
+## Iteration 15: ChebConv K=2 on correlation K=5 [TIER 2 — screening]
+
+**Date**: 2026-05-27
+**Status**: 🔄 IN PROGRESS
+**Tier**: 2 (architecture change — multi-metric logic gate applies)
+
+### Hypothesis
+> "Replace GAT (1 head, learned attention) with ChebConv K=2 (localized Chebyshev spectral filter — T_0 + T_1, ~1-hop) on the same correlation K=5 adjacency. Tests whether the operator choice matters now that the topology is fixed. If ChebConv lands meaningfully below the Iter 7 3-seed mean (11.920 − 2σ = 11.882), it earns multi-seed confirmation; otherwise this closes the GAT-vs-spectral question and the next Tier 2 lever is learned adjacency."
+
+### Agent Reasoning
+
+After Tier 1 we know two things: (a) the per-node temporal encoder dominates (−2.92 RMSE), (b) the graph adds a real but small ~0.16 RMSE on top, and that contribution comes from the *topology* (correlation > physical, Iter 3 → Iter 4 was the major bump). What we have **not** controlled: with correlation K=5 fixed, is GAT actually the right operator?
+
+ChebConv K=2 uses Chebyshev polynomial filters T_0 (identity) + T_1 (scaled Laplacian). It is a **fixed-weight spectral filter** — no attention, no learned per-edge weights beyond the edge-weight scalar already baked into the adjacency. This is a cleaner read on "does the operator matter": if ChebConv lands at or above 11.920, the answer is "no, attention was doing nothing the spectral filter can't do" and the graph contribution is purely a topology effect. If it lands materially below, then attention was actually hurting.
+
+ChebConv is also computationally lighter than GAT (no per-edge softmax, single matmul per polynomial term). Per the simplicity gate: if it ties Iter 7 on RMSE but runs faster, that's still a win on cost-quality.
+
+ChebConv was already wired in train.py at hardcoded K=3. Added `--cheb-k` CLI flag (default 2) for explicit control.
+
+### Configuration
+```
+Architecture: Per-node 1-layer LSTM + 1× ChebConv (K=2) + residual skip
+Hidden: 64, adj_type: correlation, K_neighbors: 5
+LR: 1e-3, Epochs: 10, Batch: 64, Seed: 0
+```
+
+### Expected Outcome
+- **Best case**: RMSE ~11.85 (spectral filter captures correlation structure GAT was suppressing). Would earn multi-seed.
+- **Realistic null**: RMSE within ±0.04 of 11.920 — closes the operator question, says topology is the only graph lever that matters.
+- **Discard threshold**: RMSE ≥ 11.920 AND not faster than GAT (Iter 7 ≈ 2288s).
+- **Multi-metric guard**: MAE must not rise > 0.3 vs Iter 7 mean 5.94 (so MAE < 6.24).
+- **Runtime estimate**: 1300-1700s (ChebConv is faster than GAT per epoch).

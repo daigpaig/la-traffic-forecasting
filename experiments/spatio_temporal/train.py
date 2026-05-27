@@ -45,6 +45,7 @@ class STGCN(nn.Module):
         num_graph_layers: int = 1,
         num_lstm_layers: int = 1,
         dropout: float = 0.0,
+        cheb_k: int = 2,
     ) -> None:
         super().__init__()
         self.num_nodes = num_nodes
@@ -62,7 +63,7 @@ class STGCN(nn.Module):
             if graph_conv == "gcn":
                 self.graph_layers.append(GCNConv(hidden_size, hidden_size))
             elif graph_conv == "cheb":
-                self.graph_layers.append(ChebConv(hidden_size, hidden_size, K=3))
+                self.graph_layers.append(ChebConv(hidden_size, hidden_size, K=cheb_k))
             elif graph_conv == "gat":
                 # add_self_loops=False: adjacency already includes self-loops
                 self.graph_layers.append(GATConv(hidden_size, hidden_size, heads=1, add_self_loops=False))
@@ -200,6 +201,7 @@ def main() -> None:
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--hidden", type=int, default=64)
     parser.add_argument("--graph-conv", type=str, default="gcn", choices=["gcn", "cheb", "gat"])
+    parser.add_argument("--cheb-k", type=int, default=2, help="Chebyshev polynomial order for ChebConv")
     parser.add_argument("--graph-layers", type=int, default=2)
     parser.add_argument("--lstm-layers", type=int, default=1)
     parser.add_argument("--dropout", type=float, default=0.0)
@@ -255,6 +257,7 @@ def main() -> None:
         num_graph_layers=args.graph_layers,
         num_lstm_layers=args.lstm_layers,
         dropout=args.dropout,
+        cheb_k=args.cheb_k,
     ).to(device)
 
     opt = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -291,6 +294,7 @@ def main() -> None:
             f"lr={args.lr}\n"
             f"hidden={args.hidden}\n"
             f"graph_conv={args.graph_conv}\n"
+            f"cheb_k={args.cheb_k}\n"
             f"graph_layers={args.graph_layers}\n"
             f"dropout={args.dropout}\n"
             f"adj_type={args.adj_type}\n"
