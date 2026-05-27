@@ -736,3 +736,22 @@ LR: 1e-3, Epochs: 10, Batch: 64, Seed: 0
 - **Gate**: current best = Iter 8's 11.896. KEEP if RMSE < 11.896 AND MAE does not rise > 0.3 vs Iter 8's 5.905.
 - **Realistic**: given the graph's total budget is ~0.16 RMSE, expect a result within ±0.05 of Iter 7 — likely a screening "discard" unless K-sparsity genuinely matters.
 - **Runtime estimate**: ~1900-2200s (fewer edges than K=5)
+
+### Results (completed)
+- **Test RMSE**: 11.956655 mph
+- **Test MAE**: 6.266397 mph
+- **Test R²**: 0.724820 | **Runtime**: 2343.74s
+- **Status**: DISCARD
+- **Val_mse trajectory**: 0.357 → 0.355 → 0.354 → 0.353 → 0.354 → 0.356 → 0.350 → 0.350 → 0.350 → 0.353. Same plateau shape as Iter 7 (floor ≈ 0.350) — never breaks below.
+
+### Analysis — why K=3 didn't help
+
+Compared against the established 3-seed Iter 7 mean (11.920 ± 0.019):
+- RMSE 11.957 sits **+1.95σ above** the Iter 7 mean — solidly worse, not noise.
+- MAE 6.266 vs Iter 8's 5.905 = **+0.36 mph** — exceeds the 0.3 multi-metric guard (Iter 7 3-seed MAE 5.94 ± 0.27 → 6.266 is +1.2σ above that mean too).
+- Runtime 2344s ≈ Iter 7's 2288s — no compute saving despite fewer edges, because GAT message-passing cost is dominated by node-feature ops, not edge count at K=5 vs K=3 (small E reduction relative to the per-node hidden-dim matmul).
+
+The Tier 1 finding said the graph contributes ~0.16 RMSE — small but real. K=3 actually *erodes* that contribution: dropping 2 of every node's 5 most-correlated neighbors removes some genuinely informative signal (corridor-mate sensors), not just spurious correlation. The "less smoothing" intuition was wrong for this graph — K=5 was already near-minimal for the operative correlated-neighbor set.
+
+### Implication
+Topology sparsity is not the lever. The graph's small RMSE budget is **already being collected** by the K=5 correlation adjacency. Further gains need a different mechanism: either a different operator (ChebConv — next), or a learned adjacency that can re-route edges, not just prune them.
