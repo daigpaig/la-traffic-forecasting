@@ -12,3 +12,4 @@ f6d32f8	12.083941	1372.61	tier1	Iter9: temporal-only ablation — per-node LSTM 
 7beb914	11.954827	1117.16	tier1	Iter12: Iter4 config (5ep) seed=1 — 2-seed range 0.015 RMSE so far
 d4059df	11.957802	1057.57	tier1	Iter13: Iter4 config (5ep) seed=2 — 3-seed Iter4 = 11.951±0.010; Tier 1 CLOSED
 d410ef4	11.956655	2343.74	discard	Iter14: K=3 correlation graph — +0.037 vs Iter7 mean (1.95σ); MAE +0.33 above 0.3 guard
+baf9010	11.869104	3332.41	keep-marginal	Iter15: ChebConv K=2 — RMSE −0.027 vs Iter8, 2.7σ below Iter7 mean; runtime 1.58× Iter8 fails simplicity gate

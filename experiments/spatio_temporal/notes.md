@@ -790,3 +790,42 @@ LR: 1e-3, Epochs: 10, Batch: 64, Seed: 0
 - **Discard threshold**: RMSE ≥ 11.920 AND not faster than GAT (Iter 7 ≈ 2288s).
 - **Multi-metric guard**: MAE must not rise > 0.3 vs Iter 7 mean 5.94 (so MAE < 6.24).
 - **Runtime estimate**: 1300-1700s (ChebConv is faster than GAT per epoch).
+
+### Results (completed)
+- **Test RMSE**: 11.869104 mph
+- **Test MAE**: 6.198444 mph
+- **Test R²**: 0.728835
+- **Runtime**: 3332.41s (~56 min — *roughly 2× the estimate*, see below)
+- **Status**: **keep-marginal** — passes RMSE+MAE gate, fails simplicity gate
+- **Val_mse trajectory**: 0.361 → 0.355 → 0.357 → 0.356 → 0.350 → 0.350 → 0.350 → 0.350 → 0.350 → **0.349**. Hits a fractionally lower floor than Iter 7's 0.347 only at the final epoch.
+
+### Logic gate evaluation
+
+| Check | Value | Threshold | Pass? |
+|---|---|---|---|
+| RMSE vs Iter 8 (current best, 11.896) | 11.869 | < 11.896 | ✅ −0.027 |
+| MAE vs Iter 8 (5.905) | 6.198 | ≤ 6.205 (+0.3 guard) | ✅ +0.293, by 0.007 |
+| Simplicity: runtime vs Iter 8 (2109s) | 3332s | ≤ 1.5× = 3164s | ❌ 1.58× |
+| **Status** | | | **keep-marginal** |
+
+### Analysis — what this run actually says
+
+**1. The RMSE win clears the "earns multi-seed" bar.** The hypothesis specified: "If ChebConv lands meaningfully below the Iter 7 3-seed mean (11.920 − 2σ = 11.882), it earns multi-seed confirmation." 11.869 sits **2.7σ below** the Iter 7 mean and **1.4σ below** the Iter 8 single-seed. By the named criterion this earns multi-seed.
+
+**2. But the MAE is regressive.** 6.198 is +0.26σ above the Iter 7 3-seed MAE mean (5.94 ± 0.27) and +0.29 above Iter 8 (5.905). Squared-error wins, point-error doesn't — the inverse of Iter 8's pattern. ChebConv K=2's spectral filter is smoothing outliers (lowering large squared errors at congestion peaks) at the cost of small biases elsewhere. This is mechanistically plausible: T_0 + T_1 mixes node and 1-hop average; GAT's learned attention can suppress 1-hop influence per-edge, while ChebConv applies the filter uniformly.
+
+**3. The runtime miss is the real surprise.** ChebConv at K=2 came in at 3332s — *50% slower than 1×GAT (Iter 7, 2288s) and 58% slower than 2×GAT (Iter 8, 2109s)*. The estimate of 1300-1700s was wrong. The likely cause: K=2 ChebConv runs two propagation passes (T_0 = identity, T_1 = scaled Laplacian sparse matmul) per layer, and PyG's ChebConv has not been tuned for this graph's edge-replicated batch structure (B=64 copies of the 1242-edge graph). GAT's `add_self_loops=False` path avoids the same overhead. Net: ChebConv is *not* the "lighter operator" intuition predicted.
+
+**4. The simplicity gate triggers `keep-marginal`.** Per program.md §The Loop step 7: ΔRMSE 0.027 < 0.1 *and* runtime 1.58× the previous best → not eligible for `keep`. This means the result is logged and the commit kept, but **flagged for re-evaluation when surrounding architecture changes**. In practice, this gates against making ChebConv the new "best config" without first proving it's not a runtime regression dressed as an accuracy win.
+
+### Implication for next iteration
+
+Two paths, both defensible:
+
+- **Path A (recommended): multi-seed Iter 15** (seeds 1, 2 at the same config). Cost: ~6700s sequential. Justification: the hypothesis pre-committed to multi-seed if RMSE < 11.882, and 11.869 cleared it. Result decides whether ChebConv K=2 is a real operator improvement (~0.05 RMSE) or a single-seed lottery win on top of a slow operator. The MAE regression in particular needs a multi-seed read — point-error variance was ±0.27 in the Iter 7 set, so 6.198 might be at the edge of that band rather than systematically worse.
+
+- **Path B: learned adjacency** (Tier 2 backlog item). Higher-payoff but higher-risk. Path A is the protocol-mandated next step.
+
+**Decision: Path A.** Iter 16 = Iter 15 config at seed=1.
+
+---
