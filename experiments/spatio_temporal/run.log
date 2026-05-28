@@ -1,0 +1,13 @@
+Building correlation adjacency with K=5...
+Graph: 1242 edges, 207 nodes
+epoch 01  train_mse 0.372463  val_mse 0.356675
+epoch 02  train_mse 0.320448  val_mse 0.355501
+epoch 03  train_mse 0.317346  val_mse 0.361384
+epoch 04  train_mse 0.315870  val_mse 0.350271
+epoch 05  train_mse 0.316336  val_mse 0.350563
+epoch 06  train_mse 0.313245  val_mse 0.351013
+epoch 07  train_mse 0.312996  val_mse 0.349337
+epoch 08  train_mse 0.312356  val_mse 0.348135
+epoch 09  train_mse 0.311230  val_mse 0.350552
+epoch 10  train_mse 0.310642  val_mse 0.356676
+test_rmse 11.987875  test_mae 5.678288  test_r2 0.723381  runtime_sec 2257.15

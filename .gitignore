@@ -6,3 +6,13 @@ __pycache__/
 logs/
 !experiments/temporal_only/logs/
 !experiments/temporal_only/logs/**
+
+# LaTeX build artifacts (keep main.tex, main.pdf, neurips_2024.sty, results_plot.png)
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+report/*.bbl
+report/*.blg
+report/*.synctex.gz
+report/_minted-*/
