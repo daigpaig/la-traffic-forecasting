@@ -31,15 +31,20 @@ Operator choice (GAT vs. ChebConv K=2) and most sub-0.05 RMSE deltas are within 
 ├── README.md                       # this file
 ├── CLAUDE.md                       # agent-collaboration notes
 ├── requirements.txt                # pip deps
+├── SPEAKER_SCRIPT.md               # talk script for the in-class presentation
+├── STAT390_AutoResearch_METR-LA.pptx  # slide deck
 ├── data/                           # METR-LA cache (gitignored; auto-downloaded)
 ├── shared/                         # data, eval, graph utils used by both tracks
 │   ├── data_loader.py              # split-safe windowing + per-sensor z-score
 │   ├── evaluation.py               # RMSE / MAE / R²
 │   ├── metr_la_dataset.py          # PyG-compatible loader
-│   └── spatial_utils.py            # physical & correlation adjacency
+│   ├── spatial_utils.py            # physical & correlation adjacency
+│   └── head_to_head_results.md     # temporal vs spatio-temporal comparison
 ├── experiments/
 │   ├── temporal_only/              # B0 baseline (Week 3)
-│   │   └── train.py                # vanilla LSTM
+│   │   ├── train.py                # vanilla LSTM
+│   │   ├── program.md              # baseline research plan
+│   │   └── logs/                   # per-run logs
 │   └── spatio_temporal/            # main project track
 │       ├── train.py                # per-node LSTM + GAT/ChebConv
 │       ├── results.tsv             # raw per-iteration log
@@ -51,6 +56,8 @@ Operator choice (GAT vs. ChebConv K=2) and most sub-0.05 RMSE deltas are within 
 │       ├── what_worked_memo.md     # mid-project attribution memo
 │       ├── failure_memo.md         # T1–T5 failure taxonomy
 │       ├── experiment_log_bundle.md# pre-iteration exploratory runs
+│       ├── make_plot.py            # generates results_plot.png
+│       ├── make_deck_charts.py     # slide-deck figures
 │       └── results_plot.png        # iteration trajectory figure
 └── report/
     ├── main.tex                    # NeurIPS-format report source
