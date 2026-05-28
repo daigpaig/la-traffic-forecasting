@@ -101,11 +101,7 @@ cd report
 pdflatex main.tex
 ```
 
-The report is anonymized for review (`\usepackage{neurips_2024}` in submission mode). For a camera-ready version with author info, change line 5 of `main.tex` to:
-
-```latex
-\usepackage[final]{neurips_2024}
-```
+The report uses NeurIPS final mode (`\usepackage[final]{neurips_2024}`), which shows author info. To produce an anonymized version for review, remove the `[final]` option from that line and recompile.
 
 ## Methodology in one paragraph
 
