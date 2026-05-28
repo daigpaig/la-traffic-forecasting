@@ -16,3 +16,18 @@ report/*.bbl
 report/*.blg
 report/*.synctex.gz
 report/_minted-*/
+
+# Internal working notes (summarized in the report appendices; kept local-only)
+experiments/spatio_temporal/notes.md
+experiments/spatio_temporal/what_worked_memo.md
+experiments/spatio_temporal/failure_memo.md
+experiments/spatio_temporal/experiment_log_bundle.md
+experiments/spatio_temporal/two_week_plan.md
+experiments/spatio_temporal/project_statement.md
+experiments/spatio_temporal/program.md
+experiments/spatio_temporal/ablation_table.md
+shared/head_to_head_results.md
+
+# Presentation materials (kept local-only)
+SPEAKER_SCRIPT.md
+*.pptx

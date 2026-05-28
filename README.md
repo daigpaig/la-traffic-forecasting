@@ -18,11 +18,8 @@ Operator choice (GAT vs. ChebConv K=2) and most sub-0.05 RMSE deltas are within 
 |---|---|
 | `report/main.pdf` | Final 4-page NeurIPS-format report + appendices (experiments record, results table, reflection memo, reproducibility) |
 | `report/main.tex` | LaTeX source for the report |
-| `experiments/spatio_temporal/results.tsv` | Raw log of every committed iteration |
-| `experiments/spatio_temporal/notes.md` | Per-iteration hypothesis, configuration, result, decision |
-| `experiments/spatio_temporal/ablation_table.md` | Controlled comparison matrix |
-| `experiments/spatio_temporal/program.md` | Agent-loop protocol (Tier 1 / Tier 2 discipline) |
-| `experiments/spatio_temporal/project_statement.md` | Revised research questions and success criteria |
+| `experiments/spatio_temporal/train.py` | Training entry point with all CLI flags |
+| `experiments/spatio_temporal/results.tsv` | Raw log of every committed iteration (commit hashes + metrics) |
 
 ## Repository layout
 
@@ -31,15 +28,12 @@ Operator choice (GAT vs. ChebConv K=2) and most sub-0.05 RMSE deltas are within 
 ├── README.md                       # this file
 ├── CLAUDE.md                       # agent-collaboration notes
 ├── requirements.txt                # pip deps
-├── SPEAKER_SCRIPT.md               # talk script for the in-class presentation
-├── STAT390_AutoResearch_METR-LA.pptx  # slide deck
 ├── data/                           # METR-LA cache (gitignored; auto-downloaded)
 ├── shared/                         # data, eval, graph utils used by both tracks
 │   ├── data_loader.py              # split-safe windowing + per-sensor z-score
 │   ├── evaluation.py               # RMSE / MAE / R²
 │   ├── metr_la_dataset.py          # PyG-compatible loader
-│   ├── spatial_utils.py            # physical & correlation adjacency
-│   └── head_to_head_results.md     # temporal vs spatio-temporal comparison
+│   └── spatial_utils.py            # physical & correlation adjacency
 ├── experiments/
 │   ├── temporal_only/              # B0 baseline (Week 3)
 │   │   ├── train.py                # vanilla LSTM
@@ -47,15 +41,7 @@ Operator choice (GAT vs. ChebConv K=2) and most sub-0.05 RMSE deltas are within 
 │   │   └── logs/                   # per-run logs
 │   └── spatio_temporal/            # main project track
 │       ├── train.py                # per-node LSTM + GAT/ChebConv
-│       ├── results.tsv             # raw per-iteration log
-│       ├── notes.md                # per-iteration write-ups (Iter 1–16)
-│       ├── ablation_table.md       # one-factor-at-a-time matrix
-│       ├── program.md              # agent loop / decision protocol
-│       ├── project_statement.md    # revised research statement
-│       ├── two_week_plan.md        # Week 6 / Week 7 schedule
-│       ├── what_worked_memo.md     # mid-project attribution memo
-│       ├── failure_memo.md         # T1–T5 failure taxonomy
-│       ├── experiment_log_bundle.md# pre-iteration exploratory runs
+│       ├── results.tsv             # raw per-iteration log (every committed iteration)
 │       ├── make_plot.py            # generates results_plot.png
 │       ├── make_deck_charts.py     # slide-deck figures
 │       └── results_plot.png        # iteration trajectory figure
@@ -65,6 +51,8 @@ Operator choice (GAT vs. ChebConv K=2) and most sub-0.05 RMSE deltas are within 
     ├── neurips_2024.sty            # NeurIPS style file
     └── results_plot.png            # figure (copy for compile)
 ```
+
+The full per-iteration narrative and the working-process documents (notes, ablation matrix, failure memo, project statement, two-week plan, etc.) are summarized in the four appendices of `report/main.pdf`. The raw timeline lives in `experiments/spatio_temporal/results.tsv`; each row carries the commit hash so any iteration is recoverable via `git checkout <hash>`.
 
 ## Setup
 
